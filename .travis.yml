@@ -18,6 +18,8 @@ warnings_are_errors: false
 
 cache:
     packages: true
+    directories:
+        - cache
 
 apt_packages:
     - libgdal-dev
@@ -39,4 +41,3 @@ r_packages:
 script:
     - R -f dataprep.R
     - R -f deploy.R
-
