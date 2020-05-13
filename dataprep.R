@@ -19,7 +19,7 @@ loadDataREST <- function() {
 }
 
 setCacheDir("./cache")
-if (!file.exists('./cache/covid.RData') || as.numeric(difftime(Sys.time(), file.info('./cache/covid.RData')$mtime, units='hours')) > 6) {
+if ((!file.exists('./cache/covid.RData') || as.numeric(difftime(Sys.time(), file.info('./cache/covid.RData')$mtime, units='hours')) > 6) && Sys.getenv("R_CONFIG_ACTIVE") != "shinyapps") {
   simpleCache('covid', loadDataREST(), recreate=TRUE)
   print("Recreating cache")
 } else {
