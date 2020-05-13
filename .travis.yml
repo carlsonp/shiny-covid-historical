@@ -8,6 +8,12 @@ language: r
 r:
   - release
 
+#https://docs.travis-ci.com/user/notifications/#Configuring-email-notifications
+notifications:
+    email:
+      on_success: never
+      on_failure: always
+
 warnings_are_errors: false
 
 cache:
