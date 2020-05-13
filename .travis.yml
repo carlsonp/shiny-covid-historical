@@ -31,6 +31,10 @@ r_packages:
     - httr
     - jsonlite
     - lubridate
+    - shinyWidgets
+    - DT
+    - visdat
+    - plotly
 
 script:
     - R -f dataprep.R
