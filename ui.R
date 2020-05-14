@@ -32,7 +32,10 @@ shinyUI(fluidPage(
       tabPanel("Worst Hit US States", DT::DTOutput("worst_states_table")),
       tabPanel("Worst States Testing", DT::DTOutput("worst_states_testing_table")),
       tabPanel("Missing Data", plotOutput("missing_data")),
-      tabPanel("Data Quality Grade", plotlyOutput("us_data_quality"))
+      tabPanel("Data Quality Grade", 
+               tags$p("The most recent scores/grades."),
+               plotlyOutput("us_data_quality")
+      )
     )
   )
 
