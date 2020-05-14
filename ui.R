@@ -9,7 +9,7 @@ shinyUI(fluidPage(
   sidebarPanel(
     uiOutput("state_filter"),
     tags$div(
-      tags$a(href="https://covidtracking.com/", "Covid Tracking Data")
+      tags$a(href="https://covidtracking.com/", "Covid Tracking Data", target="_blank")
     ),
     uiOutput("data_as_of")
   ),
@@ -24,7 +24,11 @@ shinyUI(fluidPage(
                tags$p("Ideally this should be below 5%"),
                plotlyOutput("us_daily_positive_percentage_testing_graph")
       ),
-      tabPanel("Immunity Percentage", plotlyOutput("us_total_immunity_graph")),
+      tabPanel("Immunity Percentage", 
+               tags$p("This is highly suspect since many people have had COVID without being tested."),
+               tags$p("((positives + deaths) / population)*100"),
+               plotlyOutput("us_total_immunity_graph")
+      ),
       tabPanel("Worst Hit US States", DT::DTOutput("worst_states_table")),
       tabPanel("Worst States Testing", DT::DTOutput("worst_states_testing_table")),
       tabPanel("Missing Data", plotOutput("missing_data")),
