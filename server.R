@@ -40,10 +40,18 @@ shinyServer(function(input, output, session) {
   })
   
   output$data_as_of <- renderUI({
+    shiny::validate(
+      need(!is.na(filtered_df()$date), 'Loading...')
+    )
+    
     tags$p(paste("Data as of:", max(filtered_df()$date)))
   })
    
   output$us_daily_deaths_graph <- renderPlotly({
+    shiny::validate(
+      need(!is.na(filtered_df()$date), 'Loading...')
+    )
+    
     filtered_df() %>%
       group_by(date) %>%
       summarize(dailyDeaths = sum(deathIncrease, na.rm=T)) %>%
@@ -55,6 +63,10 @@ shinyServer(function(input, output, session) {
   })
   
   output$us_daily_testing_graph <- renderPlotly({
+    shiny::validate(
+      need(!is.na(filtered_df()$date), 'Loading...')
+    )
+    
     filtered_df() %>%
       group_by(date) %>%
       summarize(dailyTests = sum(totalTestResultsIncrease, na.rm=T)) %>%
@@ -66,6 +78,10 @@ shinyServer(function(input, output, session) {
   })
   
   output$us_daily_testing_neg_graph <- renderPlotly({
+    shiny::validate(
+      need(!is.na(filtered_df()$date), 'Loading...')
+    )
+    
     filtered_df() %>%
       group_by(date) %>%
       summarize(dailyTests = sum(negativeIncrease, na.rm=T)) %>%
@@ -77,6 +93,10 @@ shinyServer(function(input, output, session) {
   })
   
   output$us_daily_testing_pos_graph <- renderPlotly({
+    shiny::validate(
+      need(!is.na(filtered_df()$date), 'Loading...')
+    )
+    
     filtered_df() %>%
       group_by(date) %>%
       summarize(dailyTests = sum(positiveIncrease, na.rm=T)) %>%
@@ -88,6 +108,10 @@ shinyServer(function(input, output, session) {
   })
   
   output$us_daily_positive_percentage_testing_graph <- renderPlotly({
+    shiny::validate(
+      need(!is.na(filtered_df()$date), 'Loading...')
+    )
+    
     filtered_df() %>%
       group_by(date) %>%
       summarize(sumNegativeIncrease = sum(negativeIncrease, na.rm=T), sumPositiveIncrease = sum(positiveIncrease, na.rm=T)) %>%
@@ -100,6 +124,10 @@ shinyServer(function(input, output, session) {
   })
   
   output$us_total_immunity_graph <- renderPlotly({
+    shiny::validate(
+      need(!is.na(filtered_df()$date), 'Loading...')
+    )
+    
     filtered_df() %>%
       group_by(date) %>%
       summarize(sumPopulation = sum(population, na.rm=T), sumCases = sum(positive, na.rm=T) + sum(death, na.rm=T)) %>%
@@ -111,6 +139,10 @@ shinyServer(function(input, output, session) {
   })
   
   output$worst_states_table <- DT::renderDT({
+    shiny::validate(
+      need(!is.na(filtered_df()$date), 'Loading...')
+    )
+    
     df <- filtered_df() %>%
       filter(date == max(filtered_df()$date)) %>%
       group_by(state) %>%
@@ -121,6 +153,10 @@ shinyServer(function(input, output, session) {
   })
   
   output$worst_states_testing_table <- DT::renderDT({
+    shiny::validate(
+      need(!is.na(filtered_df()$date), 'Loading...')
+    )
+    
     df <- filtered_df() %>%
       filter(date == max(filtered_df()$date)) %>%
       group_by(state) %>%
@@ -131,10 +167,18 @@ shinyServer(function(input, output, session) {
   })
   
   output$missing_data <- renderPlot({
+    shiny::validate(
+      need(!is.na(filtered_df()$date), 'Loading...')
+    )
+    
     vis_miss(filtered_df(), cluster=TRUE)
   })
   
   output$us_data_quality <- renderPlotly({
+    shiny::validate(
+      need(!is.na(filtered_df()$date), 'Loading...')
+    )
+    
     filtered_df() %>%
       filter(date == max(filtered_df()$date)) %>%
       group_by(dataQualityGrade) %>%
