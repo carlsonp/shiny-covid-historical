@@ -13,7 +13,7 @@ Very simple [Shiny](https://shiny.rstudio.com/) app for showing historical COVID
 
 ## CI/CD
 
-* [Automated deployment and data refreshing daily via Travis-CI](https://travis-ci.com/github/carlsonp/shiny-covid-historical)
+* [Automated deployment and data refreshing daily via Travis-CI cron job](https://travis-ci.com/github/carlsonp/shiny-covid-historical)
 * `shinyapps_name`, `shinyapps_secret`, and `shinyapps_token` are environment variables in travis-ci
 
 ## Data

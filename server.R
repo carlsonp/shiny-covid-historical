@@ -52,12 +52,12 @@ shinyServer(function(input, output, session) {
       need(!is.na(filtered_df()$date), 'Loading...')
     )
     
-    filtered_df() %>%
+    df <- filtered_df() %>%
       group_by(date) %>%
       summarize(dailyDeaths = sum(deathIncrease, na.rm=T)) %>%
-      dplyr::filter(!is.na(dailyDeaths)) %>%
-    plot_ly(x = ~date, y = ~dailyDeaths, type = "scatter", mode = "lines") %>%
-      layout(title = "Daily Deaths",
+      dplyr::filter(!is.na(dailyDeaths))
+    plot_ly(df, x = ~date, y = ~dailyDeaths, type = "scatter", mode = "lines") %>%
+      layout(title = paste0("Daily Deaths (total: ", sum(df$dailyDeaths, na.rm=T), ")"),
              xaxis = list(title = "Date"),
              yaxis = list(title = "Death Count"))
   })
@@ -67,12 +67,12 @@ shinyServer(function(input, output, session) {
       need(!is.na(filtered_df()$date), 'Loading...')
     )
     
-    filtered_df() %>%
+    df <- filtered_df() %>%
       group_by(date) %>%
       summarize(dailyTests = sum(totalTestResultsIncrease, na.rm=T)) %>%
-      dplyr::filter(!is.na(dailyTests)) %>%
-    plot_ly(x = ~date, y = ~dailyTests, type = "scatter", mode = "lines") %>%
-      layout(title = "Daily Testing",
+      dplyr::filter(!is.na(dailyTests))
+    plot_ly(df, x = ~date, y = ~dailyTests, type = "scatter", mode = "lines") %>%
+      layout(title = paste0("Daily Testing (total: ", sum(df$dailyTests, na.rm=T), ")"),
              xaxis = list(title = "Date"),
              yaxis = list(title = "Test Count"))
   })
@@ -82,12 +82,12 @@ shinyServer(function(input, output, session) {
       need(!is.na(filtered_df()$date), 'Loading...')
     )
     
-    filtered_df() %>%
+    df <- filtered_df() %>%
       group_by(date) %>%
       summarize(dailyTests = sum(negativeIncrease, na.rm=T)) %>%
-      dplyr::filter(!is.na(dailyTests)) %>%
-    plot_ly(x = ~date, y = ~dailyTests, type = "scatter", mode = "lines") %>%
-      layout(title = "Daily Testing Negative",
+      dplyr::filter(!is.na(dailyTests))
+    plot_ly(df, x = ~date, y = ~dailyTests, type = "scatter", mode = "lines") %>%
+      layout(title = paste0("Daily Testing Negative (total: ", sum(df$dailyTests, na.rm=T), ")"),
              xaxis = list(title = "Date"),
              yaxis = list(title = "Negative Result Test Count"))
   })
@@ -97,12 +97,12 @@ shinyServer(function(input, output, session) {
       need(!is.na(filtered_df()$date), 'Loading...')
     )
     
-    filtered_df() %>%
+    df <- filtered_df() %>%
       group_by(date) %>%
       summarize(dailyTests = sum(positiveIncrease, na.rm=T)) %>%
-      dplyr::filter(!is.na(dailyTests)) %>%
-    plot_ly(x = ~date, y = ~dailyTests, type = "scatter", mode = "lines") %>%
-      layout(title = "Daily Testing Positive",
+      dplyr::filter(!is.na(dailyTests))
+    plot_ly(df, x = ~date, y = ~dailyTests, type = "scatter", mode = "lines") %>%
+      layout(title = paste0("Daily Testing Positive (total: ", sum(df$dailyTests, na.rm=T), ")"),
              xaxis = list(title = "Date"),
              yaxis = list(title = "Positive Result Test Count"))
   })
@@ -187,6 +187,19 @@ shinyServer(function(input, output, session) {
       layout(title = "Data Quality Grade",
              xaxis = list(title = "Data Quality Grade"),
              yaxis = list(title = "Count of States"))
+  })
+  
+  output$data_quality_table <- DT::renderDT({
+    shiny::validate(
+      need(!is.na(filtered_df()$date), 'Loading...')
+    )
+    
+    df <- filtered_df() %>%
+      filter(date == max(filtered_df()$date)) %>%
+      select(state, dataQualityGrade) %>%
+      arrange(state) %>%
+      data.frame()
+    DT::datatable(df)
   })
   
 })
