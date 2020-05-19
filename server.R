@@ -134,6 +134,23 @@ shinyServer(function(input, output, session) {
              yaxis = list(title = "Positive Percentage"))
   })
   
+  output$us_daily_hospitalized_graph <- renderPlotly({
+    shiny::validate(
+      need(!is.na(filtered_df()$date), 'Loading...')
+    )
+    
+    df <- filtered_df() %>%
+      group_by(date) %>%
+      summarize(dailyHospitalized = sum(hospitalizedIncrease, na.rm=T)) %>%
+      mutate(roll_mean = rollmeanr(dailyHospitalized, k=7, fill=NA)) %>%
+      dplyr::filter(!is.na(dailyHospitalized))
+    plot_ly(df, x = ~date, y = ~dailyHospitalized, type = "scatter", mode = "lines", name="Hospitalized") %>%
+      add_trace(df, x=~date, y=~roll_mean, name="7 day moving average") %>%
+      layout(title = paste0("Daily Hospitalized (total: ", sum(df$dailyHospitalized, na.rm=T), ")"),
+             xaxis = list(title = "Date"),
+             yaxis = list(title = "Hospitalized Count"))
+  })
+  
   output$us_total_immunity_graph <- renderPlotly({
     shiny::validate(
       need(!is.na(filtered_df()$date), 'Loading...')

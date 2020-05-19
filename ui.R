@@ -25,6 +25,10 @@ shinyUI(fluidPage(
                tags$p("Ideally this should be below 5%"),
                plotlyOutput("us_daily_positive_percentage_testing_graph")
       ),
+      tabPanel("Daily Hospitalized",
+               tags$p("Not all states are reporting hospitalizations."),
+               plotlyOutput("us_daily_hospitalized_graph")
+      ),
       tabPanel("Immunity Percentage", 
                tags$p("This is highly suspect since many people have had COVID without being tested.  In addition, immunity may not occur or only last a short time."),
                tags$p("((positives + deaths) / population)*100"),
