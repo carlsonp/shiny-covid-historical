@@ -37,6 +37,7 @@ r_packages:
     - DT
     - visdat
     - plotly
+    - zoo
 
 script:
     - R -f dataprep.R

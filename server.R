@@ -5,6 +5,7 @@ library(plotly)
 library(shinyWidgets) # https://github.com/dreamRs/shinyWidgets
 library(DT)
 library(visdat)
+library(zoo)
 
 source(file="dataprep.R")
 
@@ -55,8 +56,10 @@ shinyServer(function(input, output, session) {
     df <- filtered_df() %>%
       group_by(date) %>%
       summarize(dailyDeaths = sum(deathIncrease, na.rm=T)) %>%
+      mutate(roll_mean = rollmeanr(dailyDeaths, k=7, fill=NA)) %>%
       dplyr::filter(!is.na(dailyDeaths))
-    plot_ly(df, x = ~date, y = ~dailyDeaths, type = "scatter", mode = "lines") %>%
+    plot_ly(df, x = ~date, y = ~dailyDeaths, type = "scatter", mode = "lines", name="Deaths") %>%
+      add_trace(df, x=~date, y=~roll_mean, name="7 day moving average") %>%
       layout(title = paste0("Daily Deaths (total: ", sum(df$dailyDeaths, na.rm=T), ")"),
              xaxis = list(title = "Date"),
              yaxis = list(title = "Death Count"))
@@ -70,8 +73,10 @@ shinyServer(function(input, output, session) {
     df <- filtered_df() %>%
       group_by(date) %>%
       summarize(dailyTests = sum(totalTestResultsIncrease, na.rm=T)) %>%
+      mutate(roll_mean = rollmeanr(dailyTests, k=7, fill=NA)) %>%
       dplyr::filter(!is.na(dailyTests))
-    plot_ly(df, x = ~date, y = ~dailyTests, type = "scatter", mode = "lines") %>%
+    plot_ly(df, x = ~date, y = ~dailyTests, type = "scatter", mode = "lines", name="Tests") %>%
+      add_trace(df, x=~date, y=~roll_mean, name="7 day moving average") %>%
       layout(title = paste0("Daily Testing (total: ", sum(df$dailyTests, na.rm=T), ")"),
              xaxis = list(title = "Date"),
              yaxis = list(title = "Test Count"))
@@ -85,8 +90,10 @@ shinyServer(function(input, output, session) {
     df <- filtered_df() %>%
       group_by(date) %>%
       summarize(dailyTests = sum(negativeIncrease, na.rm=T)) %>%
+      mutate(roll_mean = rollmeanr(dailyTests, k=7, fill=NA)) %>%
       dplyr::filter(!is.na(dailyTests))
-    plot_ly(df, x = ~date, y = ~dailyTests, type = "scatter", mode = "lines") %>%
+    plot_ly(df, x = ~date, y = ~dailyTests, type = "scatter", mode = "lines", name="Negative Tests") %>%
+      add_trace(df, x=~date, y=~roll_mean, name="7 day moving average") %>%
       layout(title = paste0("Daily Testing Negative (total: ", sum(df$dailyTests, na.rm=T), ")"),
              xaxis = list(title = "Date"),
              yaxis = list(title = "Negative Result Test Count"))
@@ -100,8 +107,10 @@ shinyServer(function(input, output, session) {
     df <- filtered_df() %>%
       group_by(date) %>%
       summarize(dailyTests = sum(positiveIncrease, na.rm=T)) %>%
+      mutate(roll_mean = rollmeanr(dailyTests, k=7, fill=NA)) %>%
       dplyr::filter(!is.na(dailyTests))
-    plot_ly(df, x = ~date, y = ~dailyTests, type = "scatter", mode = "lines") %>%
+    plot_ly(df, x = ~date, y = ~dailyTests, type = "scatter", mode = "lines", name="Positive Tests") %>%
+      add_trace(df, x=~date, y=~roll_mean, name="7 day moving average") %>%
       layout(title = paste0("Daily Testing Positive (total: ", sum(df$dailyTests, na.rm=T), ")"),
              xaxis = list(title = "Date"),
              yaxis = list(title = "Positive Result Test Count"))
@@ -116,8 +125,10 @@ shinyServer(function(input, output, session) {
       group_by(date) %>%
       summarize(sumNegativeIncrease = sum(negativeIncrease, na.rm=T), sumPositiveIncrease = sum(positiveIncrease, na.rm=T)) %>%
       mutate(positivePercentage = (sumPositiveIncrease / (sumPositiveIncrease + sumNegativeIncrease))*100) %>%
+      mutate(roll_mean = rollmeanr(positivePercentage, k=7, fill=NA)) %>%
       dplyr::filter(!is.na(positivePercentage), positivePercentage < 75) %>% # filter out extremely high percentages at start of pandemic
-    plot_ly(x = ~date, y = ~positivePercentage, type = "scatter", mode = "lines") %>%
+    plot_ly(x = ~date, y = ~positivePercentage, type = "scatter", mode = "lines", name="Positive Percentage") %>%
+      add_trace(df, x=~date, y=~roll_mean, name="7 day moving average") %>%
       layout(title = "Daily Positive Percentage",
              xaxis = list(title = "Date"),
              yaxis = list(title = "Positive Percentage"))
