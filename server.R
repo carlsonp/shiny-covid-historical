@@ -45,7 +45,7 @@ shinyServer(function(input, output, session) {
       need(!is.na(filtered_df()$date), 'Loading...')
     )
     
-    tags$p(paste("Data as of:", max(filtered_df()$date)))
+    tags$p(paste("Data as of:", max(filtered_df()$date), "(updated daily)"))
   })
    
   output$us_daily_deaths_graph <- renderPlotly({
