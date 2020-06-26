@@ -38,6 +38,10 @@ r_packages:
     - visdat
     - plotly
     - zoo
+    - leaflet
+    - sf
+    - readr
+    - shinydashboard
 
 script:
     - R -f dataprep.R

@@ -6,17 +6,15 @@ library(shinyWidgets) # https://github.com/dreamRs/shinyWidgets
 library(DT)
 library(visdat)
 library(zoo)
+# sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable
+# sudo apt-get update
+# sudo apt-get install libudunits2-dev libgdal-dev libgeos-dev libproj-dev 
+library(sf)
+library(leaflet)
+library(shinydashboard)
 
 source(file="dataprep.R")
 
-# https://en.wikipedia.org/wiki/List_of_states_and_territories_of_the_United_States_by_population
-# Census population estimate July 1, 2019
-state_pop_df <- read.csv("state-populations-wikipedia.csv")
-state_pop_df$state <- as.character(state_pop_df$state)
-
-covid <- dplyr::left_join(covid, state_pop_df, by=c("state" = "state")) %>%
-  dplyr::select(-hash, -posNeg, -total)
-rm(state_pop_df)
 
 shinyServer(function(input, output, session) {
   
@@ -27,11 +25,58 @@ shinyServer(function(input, output, session) {
     )
   })
   
+  filtered_nytimes <- reactive({
+    df <- nytimescovidcounties %>%
+      dplyr::filter(state %in% input$mapStateFilter) %>%
+      dplyr::filter(date == max(date))
+    
+    return(df)
+  })
+  
+  state_shape <- reactive({
+    # extremely high resolution, large shape files, over 100 MB
+    # https://www.census.gov/cgi-bin/geo/shapefiles/index.php
+    
+    # a more simplified version, better for Github
+    # https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html
+    usgeo <- sf::st_read("./shapefiles/cb_2019_us_county_5m.shp") %>%
+      mutate(fips = as.character(paste0(STATEFP, COUNTYFP)))
+    
+    df <- filtered_nytimes() %>%
+      dplyr::group_by(fips) %>%
+      summarise(percent_positive_cases = round((sum(cases) / unique(POPESTIMATE2019)) * 100, digits=2),
+                positive_cases = sum(cases),
+                population = unique(POPESTIMATE2019),
+                percent_deaths = round((sum(deaths) / unique(POPESTIMATE2019)) * 100, digits=2),
+                deaths = sum(deaths))
+    
+    # https://stackoverflow.com/questions/58152812/how-do-i-map-county-level-data-as-a-heatmap-using-fips-codes-interactively-in
+    # join data with shapefiles
+    df <- sf::st_as_sf(df %>% left_join(usgeo, by="fips"))
+    # change projection otherwise we get a warning
+    df <- sf::st_transform(df, "+proj=longlat +datum=WGS84")
+    
+    return(df)
+  })
+  
+  output$map_state_filter <- renderUI({
+    pickerInput("mapStateFilter",
+                label = "US State:",
+                choices = sort(unique(nytimescovidcounties$state)),
+                selected = "New Mexico",
+                options = list(
+                  `actions-box` = TRUE, 
+                  size = 10
+                ), 
+                multiple = FALSE
+    )
+  })
+  
   output$state_filter <- renderUI({
     pickerInput("stateFilter",
-      label = "US States:",
-      choices = unique(covid$state),
-      selected = unique(covid$state),
+      label = "US State(s):",
+      choices = sort(unique(covid$state)),
+      selected = sort(unique(covid$state)),
       options = list(
         `actions-box` = TRUE, 
         size = 10
@@ -46,6 +91,14 @@ shinyServer(function(input, output, session) {
     )
     
     tags$p(paste("Data as of:", max(filtered_df()$date), "(updated daily)"))
+  })
+  
+  output$nytimes_data_as_of <- renderUI({
+    shiny::validate(
+      need(!is.na(nytimescovidcounties$date), 'Loading...')
+    )
+    
+    tags$p(paste("Data as of:", max(nytimescovidcounties$date), "(updated daily)"))
   })
    
   output$us_daily_deaths_graph <- renderPlotly({
@@ -227,6 +280,89 @@ shinyServer(function(input, output, session) {
       select(state, dataQualityGrade) %>%
       arrange(state) %>%
       data.frame()
+    DT::datatable(df)
+  })
+  
+  output$county_cases_leaflet <- leaflet::renderLeaflet({
+    shiny::validate(
+      need(!is.na(state_shape()$NAME), 'Loading...')
+    )
+    
+    # create popups
+    percentcasespopup <- paste0("County: ", state_shape()$NAME, "<br>Percentage of cumulative positive cases relative to population: ", state_shape()$percent_positive_cases, "%")
+    numbercasespopup <- paste0("County: ", state_shape()$NAME, "<br>Number of cumulative positive cases: ", state_shape()$positive_cases)
+    percentdeathspopup <- paste0("County: ", state_shape()$NAME, "<br>Percentage of cumulative deaths relative to population: ", state_shape()$percent_deaths, "%")
+    numberdeathspopup <- paste0("County: ", state_shape()$NAME, "<br>Number of cumulative deaths: ", state_shape()$deaths)
+    populationpopup <- paste0("County: ", state_shape()$NAME, "<br>Population: ", state_shape()$population)
+    
+    # create color palettes
+    percentCasesPalette <- colorNumeric(palette = "Reds", domain = state_shape()$percent_positive_cases)
+    numberCasesPalette <- colorNumeric(palette = "Reds", domain = state_shape()$positive_cases)
+    percentDeathsPalette <- colorNumeric(palette = "Reds", domain = state_shape()$percent_deaths)
+    numberDeathsPalette <- colorNumeric(palette = "Reds", domain = state_shape()$deaths)
+    populationPalette <- colorNumeric(palette = "Reds", domain = state_shape()$population)
+    
+    # create map
+    leaflet(state_shape(), options = leafletOptions(zoomControl = FALSE)) %>%
+      addProviderTiles("CartoDB.Positron") %>%
+      addPolygons(stroke=FALSE,
+                  smoothFactor = 0.2,
+                  fillOpacity = 0.8,
+                  popup = percentcasespopup,
+                  color = ~percentCasesPalette(state_shape()$percent_positive_cases),
+                  group = "Percentage of cumulative positive cases relative to population"
+      ) %>%
+      addPolygons(stroke=FALSE,
+                  smoothFactor = 0.2,
+                  fillOpacity = 0.8,
+                  popup = numbercasespopup,
+                  color = ~numberCasesPalette(state_shape()$positive_cases),
+                  group = "Number of cumulative positive cases"
+      ) %>%
+      addPolygons(stroke=FALSE,
+                  smoothFactor = 0.2,
+                  fillOpacity = 0.8,
+                  popup = percentdeathspopup,
+                  color = ~percentDeathsPalette(state_shape()$percent_deaths),
+                  group = "Percentage of cumulative deaths relative to population"
+      ) %>%
+      addPolygons(stroke=FALSE,
+                  smoothFactor = 0.2,
+                  fillOpacity = 0.8,
+                  popup = numberdeathspopup,
+                  color = ~numberDeathsPalette(state_shape()$deaths),
+                  group = "Number of cumulative deaths"
+      ) %>%
+      addPolygons(stroke=FALSE,
+                  smoothFactor = 0.2,
+                  fillOpacity = 0.8,
+                  popup = populationpopup,
+                  color = ~populationPalette(state_shape()$population),
+                  group = "Population"
+      ) %>%
+      addLayersControl(
+        baseGroups=c("Percentage of cumulative positive cases relative to population",
+                     "Number of cumulative positive cases",
+                     "Percentage of cumulative deaths relative to population",
+                     "Number of cumulative deaths",
+                     "Population"),
+        position = "topright",
+        options = layersControlOptions(collapsed = FALSE)
+      )
+  })
+  
+  output$worst_hit_counties_table <- DT::renderDT({
+    shiny::validate(
+      need(!is.na(filtered_nytimes()$date), 'Loading...')
+    )
+    
+    df <- filtered_nytimes() %>%
+      dplyr::group_by(state, county) %>%
+      summarise(percent_positive_cases_relative_pop = round((sum(cases) / unique(POPESTIMATE2019)) * 100, digits=2)) %>%
+      arrange(desc(percent_positive_cases_relative_pop)) %>%
+      mutate(percent_positive_cases_relative_pop = paste0(as.character(percent_positive_cases_relative_pop), "%")) %>%
+      data.frame()
+    
     DT::datatable(df)
   })
   
