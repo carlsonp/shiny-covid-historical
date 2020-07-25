@@ -19,3 +19,7 @@ Very simple [Shiny](https://shiny.rstudio.com/) app for showing historical COVID
 ## Data
 
 * [COVID-19 data from the Covid Tracking Project](https://covidtracking.com)
+* [US State Populations](https://en.wikipedia.org/wiki/List_of_states_and_territories_of_the_United_States_by_population)
+* [NYTimes US Covid Data by County](https://github.com/nytimes/covid-19-data)
+* [US Census County Population Estimates](https://www.census.gov/data/datasets/time-series/demo/popest/2010s-counties-total.html)
+* [US Census County Maps](https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html)
