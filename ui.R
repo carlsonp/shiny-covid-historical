@@ -99,7 +99,8 @@ dashboardPage(
         )
       ),
       tabItem(tabName = "about",
-        tags$a(href="https://github.com/carlsonp/shiny-covid-historical", "Source Code", target="_blank")
+        tags$a(href="https://github.com/carlsonp/shiny-covid-historical", "Source Code", target="_blank"),
+        tags$p("Please submit bugs or feature requests via Github issues from the link above.")
       )
     )
   )
