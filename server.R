@@ -33,6 +33,13 @@ shinyServer(function(input, output, session) {
     return(df)
   })
   
+  infectscale <- reactive({
+    return((1-(input$infectionscaught/100)) / (input$infectionscaught/100))
+  })
+  deathscale <- reactive({
+    return((1-(input$deathscaught/100)) / (input$deathscaught/100))
+  })
+
   state_shape <- reactive({
     # extremely high resolution, large shape files, over 100 MB
     # https://www.census.gov/cgi-bin/geo/shapefiles/index.php
@@ -85,6 +92,21 @@ shinyServer(function(input, output, session) {
     )
   })
   
+  output$immunity_calc <- renderUI({
+
+    df <- filtered_df() %>%
+      group_by(date) %>%
+      summarize(sumPopulation = sum(population, na.rm=T), sumPositiveCases = sum(positive, na.rm=T), sumDeaths=sum(death, na.rm=T)) %>%
+      dplyr::filter(date == max(date))
+
+    estimated_imm = round(((df$sumPositiveCases+(df$sumPositiveCases*infectscale())+df$sumDeaths+(df$sumDeaths*deathscale())) / df$sumPopulation)*100, 2)
+
+    tags$div(
+      tags$p("((tested_positives + estimated_additional_positive + known_deaths + estimated_additional_deaths) / population)*100"),
+      tags$p(paste0("((", df$sumPositiveCases, " + ", round(df$sumPositiveCases*infectscale()), " + ", df$sumDeaths, " + ", round(df$sumDeaths*deathscale()), ") / ", df$sumPopulation, ")*100 = ", estimated_imm, "%"))
+    )
+  })
+
   output$data_as_of <- renderUI({
     shiny::validate(
       need(!is.na(filtered_df()$date), 'Loading...')
@@ -206,12 +228,12 @@ shinyServer(function(input, output, session) {
   
   output$us_total_immunity_graph <- renderPlotly({
     shiny::validate(
-      need(!is.na(filtered_df()$date), 'Loading...')
+      need(!is.na(filtered_df()$date) && !is.na(infectscale()) && !is.na(deathscale()), 'Loading...')
     )
     
     filtered_df() %>%
       group_by(date) %>%
-      summarize(sumPopulation = sum(population, na.rm=T), sumCases = sum(positive, na.rm=T) + sum(death, na.rm=T)) %>%
+      summarize(sumPopulation = sum(population, na.rm=T), sumCases = (sum(positive, na.rm=T) + sum(positive, na.rm=T)*infectscale() + sum(death, na.rm=T) + sum(death, na.rm=T)*deathscale())) %>%
       mutate(immunityPercentage = (sumCases / sumPopulation)*100) %>%
     plot_ly(x = ~date, y = ~immunityPercentage, type = "scatter", mode = "lines") %>%
       layout(title = "Immunity Percentage",

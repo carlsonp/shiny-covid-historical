@@ -47,7 +47,10 @@ dashboardPage(
           ),
           tabPanel("Immunity Percentage", 
                    tags$p("This is highly suspect since many people have had COVID without being tested.  In addition, immunity may not occur or only last a short time."),
-                   tags$p("((positives + deaths) / population)*100"),
+                   # https://dreamrs.github.io/shinyWidgets/reference/numericInputIcon.html
+                   numericInputIcon("infectionscaught", "Percentage Infections Caught:", 10, min = 0.5, max = 100, step=0.5, icon = list(NULL, icon("percent"))),
+                   numericInputIcon("deathscaught", "Percentage Deaths Caught:", 80, min = 0.5, max = 100, step=0.5, icon = list(NULL, icon("percent"))),
+                   uiOutput("immunity_calc"),
                    plotlyOutput("us_total_immunity_graph")
           ),
           tabPanel("Worst Hit US States", 
