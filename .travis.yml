@@ -1,12 +1,12 @@
 # https://docs.travis-ci.com/user/languages/r/
 # https://jarrettmeyer.com/2019/04/25/publishing-to-shinyapps-github-travis-ci
 
-dist: bionic
+dist: focal
 sudo: false
 latex: false
 language: r
 r:
-  - 3.6.3
+  - release
 
 #https://docs.travis-ci.com/user/notifications/#Configuring-email-notifications
 notifications:
