@@ -6,7 +6,7 @@ sudo: false
 latex: false
 language: r
 r:
-  - release
+  - 3.6.3
 
 #https://docs.travis-ci.com/user/notifications/#Configuring-email-notifications
 notifications:
