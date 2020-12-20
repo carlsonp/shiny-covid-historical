@@ -1,6 +1,6 @@
 # shiny-covid-historical
 
-[![Build Status](https://travis-ci.com/carlsonp/shiny-covid-historical.svg?branch=master)](https://travis-ci.com/carlsonp/shiny-covid-historical)
+[![Actions Status](https://github.com/carlsonp/shiny-covid-historical/workflows/github-actions/badge.svg)](https://github.com/carlsonp/shiny-covid-historical/actions)
 
 Very simple [Shiny](https://shiny.rstudio.com/) app for showing historical COVID-19 data in the US.
 
@@ -13,8 +13,9 @@ Very simple [Shiny](https://shiny.rstudio.com/) app for showing historical COVID
 
 ## CI/CD
 
-* [Automated deployment and data refreshing daily via Travis-CI cron job](https://travis-ci.com/github/carlsonp/shiny-covid-historical)
-* `shinyapps_name`, `shinyapps_secret`, and `shinyapps_token` are environment variables in travis-ci
+* Automated deployment via Github Actions, scheduled with data updates daily
+* `SHINYAPPS_NAME`, `SHINYAPPS_SECRET`, and `SHINYAPPS_TOKEN` are repository secrets in Github where the
+values include single quotes around them.  The name is the Github account username.
 
 ## Data
 

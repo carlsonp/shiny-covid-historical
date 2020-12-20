@@ -1,0 +1,26 @@
+# validate YAML
+# https://codebeautify.org/yaml-validator
+
+name: github-actions
+on:
+  push:
+  schedule:
+    - cron: "0 0 * * *" # daily
+jobs:
+  build-deploy:
+    name: build-deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      # https://github.com/r-lib/actions/tree/master/setup-r
+      - uses: r-lib/actions/setup-r@v1
+        with:
+          r-version: '4.0.3' # The R version to download
+      - run: sudo apt-get install libgdal-dev libudunits2-dev
+      - run: Rscript -e "install.packages(c('rsconnect', 'shiny', 'tidyverse', 'lubridate', 'shinyWidgets', 'DT', 'plotly', 'readr', 'shinydashboard', 'shinyjs', 'shinyBS', 'leaflet', 'simpleCache', 'httr', 'jsonlite', 'visdat', 'zoo', 'sf'))"
+      - name: Download latest data
+      - run: R -f dataprep.R
+      - name: Push to shinyapps.io
+        run: |
+          Rscript -e "rsconnect::setAccountInfo(name=${{secrets.SHINYAPPS_NAME}}, token=${{secrets.SHINYAPPS_TOKEN}}, secret=${{secrets.SHINYAPPS_SECRET}})"
+          Rscript -e "rsconnect::deployApp()"
