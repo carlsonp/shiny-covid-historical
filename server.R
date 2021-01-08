@@ -107,7 +107,7 @@ shinyServer(function(input, output, session) {
   
   output$vaccination_state_filter <- renderUI({
     pickerInput("vaccinationStateFilter",
-                label = "US State:",
+                label = "US State(s):",
                 choices = sort(unique(cdccovidvaccinations$state)),
                 selected = sort(unique(cdccovidvaccinations$state)),
                 options = list(
@@ -446,6 +446,22 @@ shinyServer(function(input, output, session) {
       data.frame()
     
     DT::datatable(df)
+  })
+  
+  output$totalVaccinationCounts <- renderUI({
+    shiny::validate(
+      need(!is.na(filtered_vaccinations()$date), 'Loading...')
+    )
+    
+    tags$div(
+      tags$p(paste0("Total Vaccine Doses Distributed: ", prettyNum(sum(filtered_vaccinations()$doses_distributed), big.mark=",",scientific=FALSE))),
+      tags$p(paste0("Total Vaccine Doses Administered: ", prettyNum(sum(filtered_vaccinations()$doses_administered), big.mark=",",scientific=FALSE))),
+      tags$p(paste0("Average Vaccine Doses Distributed per 100k Population: ", round(mean(filtered_vaccinations()$dist_per_100k), 2))),
+      tags$p(paste0("Average Vaccine Doses Administered per 100k Population: ", round(mean(filtered_vaccinations()$admin_per_100k), 2))),
+      tags$p(paste0("Average Ratio of Vaccinations Administered Over Distributed: ", round(mean(filtered_vaccinations()$ratio_admin_dist), 2))),
+      tags$p(paste0("Total Population: ", prettyNum(sum(filtered_vaccinations()$population), big.mark=",",scientific=FALSE))),
+      tags$br()
+    )
   })
   
   output$vaccinations_map <- leaflet::renderLeaflet({

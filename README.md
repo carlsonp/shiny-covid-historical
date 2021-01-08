@@ -9,7 +9,7 @@ Very simple [Shiny](https://shiny.rstudio.com/) app for showing historical COVID
 ## Development
 
 * Install packages with `install.packages()`
-* Creates a cache file of data in the `cache` folder
+* Creates cache files of data in the `cache` folder
 
 ## CI/CD
 
@@ -23,5 +23,5 @@ values include single quotes around them.  The name is the Github account userna
 * [US State Populations](https://en.wikipedia.org/wiki/List_of_states_and_territories_of_the_United_States_by_population)
 * [NYTimes US Covid Data by County](https://github.com/nytimes/covid-19-data)
 * [US Census County Population Estimates](https://www.census.gov/data/datasets/time-series/demo/popest/2010s-counties-total.html)
-* [US Census County Maps](https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html)
+* [US Census State and County Maps](https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html)
 * [US CDC Covid Vaccinations by State](https://covid.cdc.gov/covid-data-tracker/#vaccinations)

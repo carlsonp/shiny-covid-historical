@@ -116,6 +116,7 @@ dashboardPage(
           ),
           tabsetPanel(
             tabPanel("Vaccinations by State",
+              uiOutput("totalVaccinationCounts"),
               DT::DTOutput("vaccinations_table")
             ),
             tabPanel("Vaccinations by State Map",
