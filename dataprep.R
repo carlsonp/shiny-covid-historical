@@ -5,6 +5,43 @@ library(jsonlite)
 library(lubridate)
 library(readr)
 
+loadVaccinations <- function() {
+  # https://covid.cdc.gov/covid-data-tracker/#vaccinations
+  request <- httr::GET(url = "https://covid.cdc.gov/covid-data-tracker/COVIDData/getAjaxData?id=vaccination_data")
+  if (request$status_code == "200") {
+    response <- content(request, as="text", encoding="UTF-8")
+    df <- jsonlite::fromJSON(response, flatten=TRUE) %>%
+      data.frame()
+    
+    df$vaccination_data.Date <- lubridate::ymd(df$vaccination_data.Date)
+
+    # https://en.wikipedia.org/wiki/List_of_states_and_territories_of_the_United_States_by_population
+    # Census population estimate July 1, 2019
+    state_pop_df <- read.csv("state-populations-wikipedia.csv")
+    state_pop_df$state <- as.character(state_pop_df$state)
+    
+    df <- dplyr::left_join(df, state_pop_df, by=c("vaccination_data.Location" = "state")) %>%
+      dplyr::rename(abb=vaccination_data.Location) %>%
+      dplyr::rename_all(
+        funs(
+          stringr::str_to_lower(.) %>%
+          stringr::str_replace_all(., 'vaccination_data.', '')
+        )
+      )
+    
+    # https://stackoverflow.com/questions/5411979/state-name-to-abbreviation/5412122#5412122
+    st_crosswalk <- tibble(state = state.name) %>%
+      bind_cols(tibble(abb = state.abb)) %>%
+      bind_rows(tibble(state = "District of Columbia", abb = "DC")) %>%
+      bind_rows(tibble(state = "Puerto Rico", abb = "PR"))
+    
+    df <- dplyr::left_join(df, st_crosswalk, by=c("abb")) %>%
+      data.frame()
+    
+    return(df)
+  }
+}
+
 loadDataREST <- function() {
   # https://covidtracking.com/api
   request <- httr::GET(url = "https://covidtracking.com/api/v1/states/daily.json")
@@ -80,4 +117,12 @@ if ((!file.exists('./cache/nytimescovidcounties.RData') || as.numeric(difftime(S
 } else {
   simpleCache('nytimescovidcounties')
   print("Loading NYTimes county data from cache")
+}
+
+if ((!file.exists('./cache/cdccovidvaccinations.RData') || as.numeric(difftime(Sys.time(), file.info('./cache/cdccovidvaccinations.RData')$mtime, units='hours')) > 6) && Sys.getenv("R_CONFIG_ACTIVE") != "shinyapps") {
+  simpleCache('cdccovidvaccinations', loadVaccinations(), recreate=TRUE)
+  print("Recreating CDC Covid vaccinations data cache")
+} else {
+  simpleCache('cdccovidvaccinations')
+  print("Loading CDC Covid vaccinations data from cache")
 }

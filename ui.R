@@ -13,6 +13,7 @@ dashboardPage(
     sidebarMenu(
       menuItem("Historical", tabName = "historical", icon = icon("chart-bar")),
       menuItem("Map", tabName = "map", icon = icon("map-marker")),
+      menuItem("Vaccinations", tabName = "vaccinations", icon = icon("syringe")),
       menuItem("About", tabName = "about", icon = icon("question"))
     )
   ),
@@ -100,6 +101,27 @@ dashboardPage(
             DT::DTOutput("worst_hit_counties_table")
           )
         )
+      ),
+      tabItem(tabName = "vaccinations",
+          fixedRow(
+            column(4,
+               uiOutput("vaccination_state_filter")
+            ),
+            column(4,
+               tags$div(
+                 tags$a(href="https://covid.cdc.gov/covid-data-tracker/#vaccinations", "CDC Covid Vaccination Data", target="_blank"),
+                 uiOutput("vaccination_data_as_of")
+               )
+            )
+          ),
+          tabsetPanel(
+            tabPanel("Vaccinations by State",
+              DT::DTOutput("vaccinations_table")
+            ),
+            tabPanel("Vaccinations by State Map",
+              leafletOutput("vaccinations_map")
+            )
+          )
       ),
       tabItem(tabName = "about",
         tags$a(href="https://github.com/carlsonp/shiny-covid-historical", "Source Code", target="_blank"),

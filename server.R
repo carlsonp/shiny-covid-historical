@@ -33,6 +33,13 @@ shinyServer(function(input, output, session) {
     return(df)
   })
   
+  filtered_vaccinations <- reactive({
+    return(
+      cdccovidvaccinations %>%
+        dplyr::filter(state %in% input$vaccinationStateFilter)
+    )
+  })
+  
   infectscale <- reactive({
     return((1-(input$infectionscaught/100)) / (input$infectionscaught/100))
   })
@@ -66,6 +73,25 @@ shinyServer(function(input, output, session) {
     return(df)
   })
   
+  vaccinations_state_shape <- reactive({
+    # extremely high resolution, large shape files, over 100 MB
+    # https://www.census.gov/cgi-bin/geo/shapefiles/index.php
+    
+    # a more simplified version, better for Github
+    # https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html
+    usgeo <- sf::st_read("./shapefiles/cb_2019_us_state_20m.shp")
+    
+    df <- filtered_vaccinations()
+    
+    # https://stackoverflow.com/questions/58152812/how-do-i-map-county-level-data-as-a-heatmap-using-fips-codes-interactively-in
+    # join data with shapefiles
+    df <- sf::st_as_sf(df %>% left_join(usgeo, by=c("state"="NAME")))
+    # change projection otherwise we get a warning
+    df <- sf::st_transform(df, "+proj=longlat +datum=WGS84")
+    
+    return(df)
+  })
+  
   output$map_state_filter <- renderUI({
     pickerInput("mapStateFilter",
                 label = "US State:",
@@ -76,6 +102,19 @@ shinyServer(function(input, output, session) {
                   size = 10
                 ), 
                 multiple = FALSE
+    )
+  })
+  
+  output$vaccination_state_filter <- renderUI({
+    pickerInput("vaccinationStateFilter",
+                label = "US State:",
+                choices = sort(unique(cdccovidvaccinations$state)),
+                selected = sort(unique(cdccovidvaccinations$state)),
+                options = list(
+                  `actions-box` = TRUE, 
+                  size = 10
+                ), 
+                multiple = TRUE
     )
   })
   
@@ -121,6 +160,14 @@ shinyServer(function(input, output, session) {
     )
     
     tags$p(paste("Data as of:", max(nytimescovidcounties$date), "(updated daily)"))
+  })
+  
+  output$vaccination_data_as_of <- renderUI({
+    shiny::validate(
+      need(!is.na(cdccovidvaccinations$date), 'Loading...')
+    )
+    
+    tags$p(paste("Data as of:", max(cdccovidvaccinations$date), "(updated daily)"))
   })
    
   output$us_daily_deaths_graph <- renderPlotly({
@@ -386,6 +433,97 @@ shinyServer(function(input, output, session) {
       data.frame()
     
     DT::datatable(df)
+  })
+  
+  output$vaccinations_table <- DT::renderDT({
+    shiny::validate(
+      need(!is.na(filtered_vaccinations()$date), 'Loading...')
+    )
+    
+    df <- filtered_vaccinations() %>%
+      select(state, population, doses_distributed, doses_administered, dist_per_100k, admin_per_100k, ratio_admin_dist) %>%
+      arrange(desc(admin_per_100k)) %>%
+      data.frame()
+    
+    DT::datatable(df)
+  })
+  
+  output$vaccinations_map <- leaflet::renderLeaflet({
+    shiny::validate(
+      need(!is.na(vaccinations_state_shape()$state), 'Loading...')
+    )
+    
+    # create popups
+    dosesdistributedpopup <- paste0("State: ", vaccinations_state_shape()$STUSPS, "<br>Vaccine doses distributed: ", vaccinations_state_shape()$doses_distributed)
+    dosesadministeredpopup <- paste0("State: ", vaccinations_state_shape()$STUSPS, "<br>Vaccine doses administered: ", vaccinations_state_shape()$doses_administered)
+    distper100kpopup <- paste0("State: ", vaccinations_state_shape()$STUSPS, "<br>Vaccine doses distributed per 100k population: ", vaccinations_state_shape()$dist_per_100k)
+    adminper100kpopup <- paste0("State: ", vaccinations_state_shape()$STUSPS, "<br>Vaccine doses administered per 100k population: ", vaccinations_state_shape()$admin_per_100k)
+    ratioadminperdistpopup <- paste0("State: ", vaccinations_state_shape()$STUSPS, "<br>Ratio of vaccinations administered over distributed: ", vaccinations_state_shape()$ratio_admin_dist)
+    populationpopup <- paste0("State: ", vaccinations_state_shape()$STUSPS, "<br>Population: ", vaccinations_state_shape()$population)
+    
+    # create color palettes
+    dosesDistributedPalette <- colorNumeric(palette = "Greens", domain = vaccinations_state_shape()$doses_distributed)
+    dosesAdministeredPalette <- colorNumeric(palette = "Greens", domain = vaccinations_state_shape()$doses_administered)
+    distributedPer100kPalette <- colorNumeric(palette = "Greens", domain = vaccinations_state_shape()$dist_per_100k)
+    administeredPer100kPalette <- colorNumeric(palette = "Greens", domain = vaccinations_state_shape()$admin_per_100k)
+    ratioAdministeredDistributedPalette <- colorNumeric(palette = "Greens", domain = vaccinations_state_shape()$ratio_admin_dist)
+    populationPalette <- colorNumeric(palette = "Greens", domain = vaccinations_state_shape()$population)
+    
+    # create map
+    leaflet(vaccinations_state_shape(), options = leafletOptions(zoomControl = FALSE)) %>%
+      addProviderTiles("CartoDB.Positron") %>%
+      addPolygons(stroke=FALSE,
+                  smoothFactor = 0.2,
+                  fillOpacity = 0.8,
+                  popup = dosesdistributedpopup,
+                  color = ~dosesDistributedPalette(vaccinations_state_shape()$doses_distributed),
+                  group = "Vaccine doses distributed"
+      ) %>%
+      addPolygons(stroke=FALSE,
+                  smoothFactor = 0.2,
+                  fillOpacity = 0.8,
+                  popup = dosesadministeredpopup,
+                  color = ~dosesAdministeredPalette(vaccinations_state_shape()$doses_administered),
+                  group = "Vaccine doses administered"
+      ) %>%
+      addPolygons(stroke=FALSE,
+                  smoothFactor = 0.2,
+                  fillOpacity = 0.8,
+                  popup = distper100kpopup,
+                  color = ~distributedPer100kPalette(vaccinations_state_shape()$dist_per_100k),
+                  group = "Vaccine doses distributed per 100k population"
+      ) %>%
+      addPolygons(stroke=FALSE,
+                  smoothFactor = 0.2,
+                  fillOpacity = 0.8,
+                  popup = adminper100kpopup,
+                  color = ~administeredPer100kPalette(vaccinations_state_shape()$admin_per_100k),
+                  group = "Vaccine doses administered per 100k population"
+      ) %>%
+      addPolygons(stroke=FALSE,
+                  smoothFactor = 0.2,
+                  fillOpacity = 0.8,
+                  popup = ratioadminperdistpopup,
+                  color = ~ratioAdministeredDistributedPalette(vaccinations_state_shape()$ratio_admin_dist),
+                  group = "Ratio of vaccinations administered over distributed"
+      ) %>%
+      addPolygons(stroke=FALSE,
+                  smoothFactor = 0.2,
+                  fillOpacity = 0.8,
+                  popup = populationpopup,
+                  color = ~populationPalette(vaccinations_state_shape()$population),
+                  group = "Population"
+      ) %>%
+      addLayersControl(
+        baseGroups=c("Vaccine doses distributed",
+                     "Vaccine doses administered",
+                     "Vaccine doses distributed per 100k population",
+                     "Vaccine doses administered per 100k population",
+                     "Ratio of vaccinations administered over distributed",
+                     "Population"),
+        position = "topright",
+        options = layersControlOptions(collapsed = FALSE)
+      )
   })
   
 })

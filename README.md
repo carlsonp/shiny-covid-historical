@@ -24,3 +24,4 @@ values include single quotes around them.  The name is the Github account userna
 * [NYTimes US Covid Data by County](https://github.com/nytimes/covid-19-data)
 * [US Census County Population Estimates](https://www.census.gov/data/datasets/time-series/demo/popest/2010s-counties-total.html)
 * [US Census County Maps](https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html)
+* [US CDC Covid Vaccinations by State](https://covid.cdc.gov/covid-data-tracker/#vaccinations)
