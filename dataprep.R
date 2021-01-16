@@ -36,6 +36,7 @@ loadVaccinations <- function() {
       bind_rows(tibble(state = "Puerto Rico", abb = "PR"))
     
     df <- dplyr::left_join(df, st_crosswalk, by=c("abb")) %>%
+      dplyr::mutate(ratio_admin_dist = doses_administered / doses_distributed) %>%
       data.frame()
     
     return(df)
