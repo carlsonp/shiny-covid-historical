@@ -17,7 +17,7 @@ jobs:
         with:
           r-version: '4.0.3' # The R version to download
       - run: sudo apt-get install libgdal-dev libudunits2-dev
-      - run: Rscript -e "install.packages(c('rsconnect', 'shiny', 'tidyverse', 'lubridate', 'shinyWidgets', 'DT', 'plotly', 'readr', 'shinydashboard', 'shinyjs', 'shinyBS', 'leaflet', 'simpleCache', 'httr', 'jsonlite', 'visdat', 'zoo', 'sf'))" -e "saveRDS(remotes::dev_package_deps(dependencies = TRUE), 'depends.Rds')"
+      - run: Rscript -e "install.packages(c('remotes', 'rsconnect', 'shiny', 'tidyverse', 'lubridate', 'shinyWidgets', 'DT', 'plotly', 'readr', 'shinydashboard', 'shinyjs', 'shinyBS', 'leaflet', 'simpleCache', 'httr', 'jsonlite', 'visdat', 'zoo', 'sf'))" -e "saveRDS(remotes::dev_package_deps(dependencies = TRUE), 'depends.Rds')"
       # https://github.com/actions/cache
       # https://ropenscilabs.github.io/actions_sandbox/testing-with-renev.html
       - name: Cache R packages
