@@ -15,6 +15,8 @@ library(shinydashboard)
 
 source(file="dataprep.R")
 
+cdccovidvaccinations = cdccovidvaccinations %>%
+  dplyr::mutate(ratio_admin_dist = doses_administered / doses_distributed)
 
 shinyServer(function(input, output, session) {
   
