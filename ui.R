@@ -121,6 +121,9 @@ dashboardPage(
             ),
             tabPanel("Vaccinations by State Map",
               leafletOutput("vaccinations_map")
+            ),
+            tabPanel("Vaccination History",
+              plotlyOutput("vaccination_history")
             )
           )
       ),

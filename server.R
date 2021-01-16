@@ -15,6 +15,8 @@ library(shinydashboard)
 
 source(file="dataprep.R")
 
+cdcvaccinationshist = read_csv2("cdc_vaccinations_hist.csv")
+
 cdccovidvaccinations = cdccovidvaccinations %>%
   dplyr::mutate(ratio_admin_dist = doses_administered / doses_distributed)
 
@@ -38,6 +40,13 @@ shinyServer(function(input, output, session) {
   filtered_vaccinations <- reactive({
     return(
       cdccovidvaccinations %>%
+        dplyr::filter(state %in% input$vaccinationStateFilter)
+    )
+  })
+  
+  filtered_vaccinations_hist <- reactive({
+    return(
+      cdcvaccinationshist %>%
         dplyr::filter(state %in% input$vaccinationStateFilter)
     )
   })
@@ -542,6 +551,25 @@ shinyServer(function(input, output, session) {
         position = "topright",
         options = layersControlOptions(collapsed = FALSE)
       )
+  })
+  
+  output$vaccination_history <- renderPlotly({
+    shiny::validate(
+      need(!is.na(filtered_vaccinations_hist()$date), 'Loading...')
+    )
+    
+    filtered_vaccinations_hist() %>%
+      # group on day to find the latest run for each day
+      dplyr::group_by(date) %>%
+      dplyr::filter(runid == max(runid)) %>%
+      data.frame() %>%
+      dplyr::mutate(pop_percent_admin = (doses_administered/population)*100) %>%
+      dplyr::group_by(date) %>%
+      dplyr::summarize(avg_pop_percent_admin = round(mean(pop_percent_admin, na.rm=TRUE), 2)) %>%
+      plot_ly(x = ~date, y = ~avg_pop_percent_admin, mode = "lines") %>%
+      layout(title = "Average Population Percent Administered Vaccination",
+             xaxis = list(title = "Date"),
+             yaxis = list(title = "Average Population Percent Administered Vaccination"))
   })
   
 })
