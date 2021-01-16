@@ -1,0 +1,30 @@
+# validate YAML
+# https://codebeautify.org/yaml-validator
+
+name: CDC-vaccination-hist-pull
+on:
+  push:
+  schedule:
+    - cron: "0 */8 * * *" # every 8 hours
+jobs:
+  build-deploy:
+    name: CDC-vaccination-hist-pull
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      # https://github.com/r-lib/actions/tree/master/setup-r
+      - uses: r-lib/actions/setup-r@v1
+        with:
+          r-version: '4.0.3' # The R version to download
+      - run: sudo apt-get install libgdal-dev libudunits2-dev
+      - run: Rscript -e "install.packages(c('tidyverse', 'lubridate', 'readr', 'simpleCache', 'httr', 'jsonlite'))"
+      - name: Download latest data
+        run: R -f store_vaccinations_hist.R
+      - name: Push to Github repo
+        # https://github.com/actions/checkout#push-a-commit-using-the-built-in-token
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add cdc_vaccinations_hist.csv
+          git commit -m "updated CDC vaccination data for historical tracking"
+          git push
