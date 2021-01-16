@@ -29,9 +29,9 @@ jobs:
         run: R -f store_vaccinations_hist.R
       - name: Push to Github repo
         # https://github.com/actions/checkout#push-a-commit-using-the-built-in-token
+        # https://stackoverflow.com/questions/8123674/how-to-git-commit-nothing-without-an-error
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
           git add cdc_vaccinations_hist.csv
-          git commit -m "updated CDC vaccination data for historical tracking"
-          git push
+          git diff-index --quiet HEAD || git commit -m "updated CDC vaccination data for historical tracking" && git push
