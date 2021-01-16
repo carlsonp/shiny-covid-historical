@@ -16,6 +16,13 @@ jobs:
       - uses: r-lib/actions/setup-r@v1
         with:
           r-version: '4.0.3' # The R version to download
+      # https://github.com/actions/cache
+      - name: Cache R packages
+        uses: actions/cache@v1
+        with:
+          path: ${{ env.R_LIBS_USER }}
+          # https://github.com/r-lib/actions/issues/23
+          key: r-${{ hashFiles('DESCRIPTION') }}
       - run: sudo apt-get install libgdal-dev libudunits2-dev
       - run: Rscript -e "install.packages(c('rsconnect', 'shiny', 'tidyverse', 'lubridate', 'shinyWidgets', 'DT', 'plotly', 'readr', 'shinydashboard', 'shinyjs', 'shinyBS', 'leaflet', 'simpleCache', 'httr', 'jsonlite', 'visdat', 'zoo', 'sf'))"
       - name: Download latest data
