@@ -4,7 +4,6 @@ library(lubridate)
 library(plotly)
 library(shinyWidgets) # https://github.com/dreamRs/shinyWidgets
 library(DT)
-library(visdat)
 library(zoo)
 # sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable
 # sudo apt-get update
@@ -146,7 +145,7 @@ shinyServer(function(input, output, session) {
 
     df <- filtered_df() %>%
       group_by(date) %>%
-      summarize(sumPopulation = sum(population, na.rm=T), sumPositiveCases = sum(positive, na.rm=T), sumDeaths=sum(death, na.rm=T)) %>%
+      summarize(sumPopulation = sum(population, na.rm=T), sumPositiveCases = sum(new_case, na.rm=T), sumDeaths=sum(new_death, na.rm=T)) %>%
       dplyr::filter(date == max(date))
 
     estimated_imm = round(((df$sumPositiveCases+(df$sumPositiveCases*infectscale())+df$sumDeaths+(df$sumDeaths*deathscale())) / df$sumPopulation)*100, 2)
@@ -188,12 +187,12 @@ shinyServer(function(input, output, session) {
     
     df <- filtered_df() %>%
       group_by(date) %>%
-      summarize(dailyDeaths = sum(deathIncrease, na.rm=T)) %>%
-      mutate(roll_mean = rollmeanr(dailyDeaths, k=7, fill=NA)) %>%
-      dplyr::filter(!is.na(dailyDeaths))
-    plot_ly(df, x = ~date, y = ~dailyDeaths, type = "scatter", mode = "lines", name="Deaths") %>%
+      summarize(new_death = sum(new_death, na.rm=T)) %>%
+      mutate(roll_mean = rollmeanr(new_death, k=7, fill=NA)) %>%
+      dplyr::filter(!is.na(new_death))
+    plot_ly(df, x = ~date, y = ~new_death, type = "scatter", mode = "lines", name="Deaths") %>%
       add_trace(df, x=~date, y=~roll_mean, name="7 day moving average") %>%
-      layout(title = paste0("Daily Deaths (total: ", sum(df$dailyDeaths, na.rm=T), ")"),
+      layout(title = paste0("Daily Deaths (total: ", sum(df$new_death, na.rm=T), ")"),
              xaxis = list(title = "Date"),
              yaxis = list(title = "Death Count"))
   })
@@ -239,7 +238,7 @@ shinyServer(function(input, output, session) {
     
     df <- filtered_df() %>%
       group_by(date) %>%
-      summarize(dailyTests = sum(positiveIncrease, na.rm=T)) %>%
+      summarize(dailyTests = sum(new_case, na.rm=T)) %>%
       mutate(roll_mean = rollmeanr(dailyTests, k=7, fill=NA)) %>%
       dplyr::filter(!is.na(dailyTests))
     plot_ly(df, x = ~date, y = ~dailyTests, type = "scatter", mode = "lines", name="Positive Tests") %>%
@@ -323,42 +322,6 @@ shinyServer(function(input, output, session) {
       group_by(state) %>%
       summarize(testsPerCapita = (sum(positive, na.rm=T)+sum(negative, na.rm=T)) / sum(population, na.rm=T), population=population, positive=positive, negative=negative) %>%
       arrange(testsPerCapita) %>%
-      data.frame()
-    DT::datatable(df)
-  })
-  
-  output$missing_data <- renderPlot({
-    shiny::validate(
-      need(!is.na(filtered_df()$date), 'Loading...')
-    )
-    
-    vis_miss(filtered_df(), cluster=TRUE)
-  })
-  
-  output$us_data_quality <- renderPlotly({
-    shiny::validate(
-      need(!is.na(filtered_df()$date), 'Loading...')
-    )
-    
-    filtered_df() %>%
-      filter(date == max(filtered_df()$date)) %>%
-      group_by(dataQualityGrade) %>%
-      summarize(n = n()) %>%
-    plot_ly(x = ~dataQualityGrade, y = ~n, type = "bar") %>%
-      layout(title = "Data Quality Grade",
-             xaxis = list(title = "Data Quality Grade"),
-             yaxis = list(title = "Count of States"))
-  })
-  
-  output$data_quality_table <- DT::renderDT({
-    shiny::validate(
-      need(!is.na(filtered_df()$date), 'Loading...')
-    )
-    
-    df <- filtered_df() %>%
-      filter(date == max(filtered_df()$date)) %>%
-      select(state, dataQualityGrade) %>%
-      arrange(state) %>%
       data.frame()
     DT::datatable(df)
   })

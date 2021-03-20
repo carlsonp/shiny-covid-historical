@@ -27,7 +27,7 @@ dashboardPage(
           ),
           column(4,
              tags$div(
-               tags$a(href="https://covidtracking.com/", "Covid Tracking Data", target="_blank"),
+               tags$a(href="https://covid.cdc.gov/covid-data-tracker/", "CDC Covid Data", target="_blank"),
                uiOutput("data_as_of")
              )
           )
@@ -61,13 +61,6 @@ dashboardPage(
           tabPanel("Worst States Testing", 
                    tags$p("State population data from Wikipedia."),
                    DT::DTOutput("worst_states_testing_table")
-          ),
-          tabPanel("Missing Data", plotOutput("missing_data")),
-          tabPanel("Data Quality Grade", 
-                   tags$p("The most recent scores/grades from the Covid Tracking Project."),
-                   tags$a(href="https://covidtracking.com/about-data#state-data-quality-grades", "https://covidtracking.com/about-data#state-data-quality-grades", target="_blank"),
-                   plotlyOutput("us_data_quality"),
-                   DT::DTOutput("data_quality_table")
           )
         )
       ),

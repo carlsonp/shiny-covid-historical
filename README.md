@@ -19,7 +19,7 @@ values include single quotes around them.  The name is the Github account userna
 
 ## Data
 
-* [COVID-19 data from the Covid Tracking Project](https://covidtracking.com)
+* [COVID-19 state case data from the CDC](https://covid.cdc.gov/covid-data-tracker/)
 * [US State Populations](https://en.wikipedia.org/wiki/List_of_states_and_territories_of_the_United_States_by_population)
 * [NYTimes US Covid Data by County](https://github.com/nytimes/covid-19-data)
 * [US Census County Population Estimates](https://www.census.gov/data/datasets/time-series/demo/popest/2010s-counties-total.html)

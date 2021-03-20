@@ -4,6 +4,7 @@ library(httr)
 library(jsonlite)
 library(lubridate)
 library(readr)
+library(tidyr)
 
 loadVaccinations <- function() {
   # https://covid.cdc.gov/covid-data-tracker/#vaccinations
@@ -43,34 +44,45 @@ loadVaccinations <- function() {
 }
 
 loadDataREST <- function() {
-  # https://covidtracking.com/api
-  request <- httr::GET(url = "https://covidtracking.com/api/v1/states/daily.json")
+  # https://data.cdc.gov/Case-Surveillance/United-States-COVID-19-Cases-and-Deaths-by-State-o/9mfq-cb36
+  request <- httr::GET(url = "https://data.cdc.gov/resource/9mfq-cb36.json?$limit=100000")
   if (request$status_code == "200") {
     response <- content(request, as="text", encoding="UTF-8")
     df <- jsonlite::fromJSON(response, flatten=TRUE) %>% 
       data.frame()
     
-    df$date <- lubridate::ymd(df$date)
-    df$lastUpdateEt <- lubridate::mdy_hm(df$lastUpdateEt)
+    df$date <- lubridate::as_date(df$submission_date)
+    
+    df$new_death = as.numeric(df$new_death)
+    df$new_case = as.numeric(df$new_case)
     
     # https://en.wikipedia.org/wiki/List_of_states_and_territories_of_the_United_States_by_population
     # Census population estimate July 1, 2019
     state_pop_df <- read.csv("state-populations-wikipedia.csv")
     state_pop_df$state <- as.character(state_pop_df$state)
     
-    df <- dplyr::left_join(df, state_pop_df, by=c("state" = "state")) %>%
-      dplyr::select(-hash, -posNeg, -total) %>%
-      dplyr::rename(abb=state)
+    df <- dplyr::left_join(df, state_pop_df, by=c("state" = "state"))
     
-    # https://stackoverflow.com/questions/5411979/state-name-to-abbreviation/5412122#5412122
-    st_crosswalk <- tibble(state = state.name) %>%
-      bind_cols(tibble(abb = state.abb)) %>%
-      bind_rows(tibble(state = "District of Columbia", abb = "DC")) %>%
-      bind_rows(tibble(state = "Puerto Rico", abb = "PR"))
-    
-    df <- dplyr::left_join(df, st_crosswalk, by=c("abb")) %>%
-      data.frame()
-    
+    # download positive and negative case data
+    # https://beta.healthdata.gov/dataset/COVID-19-Diagnostic-Laboratory-Testing-PCR-Testing/j8mb-icvb
+    request <- httr::GET(url = "https://beta.healthdata.gov/resource/j8mb-icvb.json?$limit=100000")
+    if (request$status_code == "200") {
+      response <- content(request, as="text", encoding="UTF-8")
+      cases_df <- jsonlite::fromJSON(response, flatten=TRUE) %>% 
+        data.frame() %>%
+        dplyr::select(-geocoded_state.type, -geocoded_state.coordinates)
+        
+      cases_df$date = lubridate::as_date(cases_df$date)
+      cases_df$new_results_reported = as.numeric(cases_df$new_results_reported)
+      cases_df$total_results_reported = as.numeric(cases_df$total_results_reported)
+      
+      cases_df <- cases_df %>%
+        # go from long to wide format
+        tidyr::pivot_wider(names_from=overall_outcome, values_from=c("new_results_reported", "total_results_reported"))
+      
+      df <- dplyr::left_join(df, cases_df, by=c("state"="state", "date"="date"))
+    }
+
     return(df)
   }
 }
